@@ -232,8 +232,7 @@ public class Main {
 					}
 					
 					System.out.println("How many child tickets?: ");
-					chi
-					ldNum = input.nextInt();
+					childNum = input.nextInt();
 					while(childNum < 0) {
 						printLine("Invalid number of tickets, please enter a number between 0 and " + totalCols);
 						childNum = input.nextInt();
