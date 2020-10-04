@@ -1,4 +1,10 @@
-
+/*
+ * Name: Matthew Vu
+ * Class: CS 2336
+ * ID: MSV180000
+ * Purpose: Ticket reservation system for a movie theater. Uses file i/o to make
+ * reservations and outputs results to output file.
+ */
 public class Node<Seat> {
 	private Node<Seat> Up;
 	private Node<Seat> Down;
@@ -23,10 +29,10 @@ public class Node<Seat> {
 	}
 	// mutators and accessors
 	public Seat getPayload() {
-		return Payload;
+		return this.Payload;
 	}
 	public void setPayload(Seat payload) {
-		Payload = payload;
+		this.Payload = payload;
 	}
 	public Node<Seat> getRight() {
 		return Right;

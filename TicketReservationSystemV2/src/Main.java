@@ -24,9 +24,6 @@ public class Main {
 	static int totalCols = 0;
 	static int totalRows = 0;
 	
-	// inits 2d array for auditorium 10 rows, 26 columns
-	static String[][] auditorium = new String[MAX_ROWS][MAX_COLUMNS];
-	
 	// used to round decimals to hundredth place
 	private static DecimalFormat df = new DecimalFormat("0.00");
 		
@@ -141,81 +138,23 @@ public class Main {
 	    return findSeat(bestRow,bestCol);
 	}
 	*/
-	// displays what the auditorium looks like to user
-	public static void displayAuditorium(String[][] audit) {
-		rowLetterGenerator();	
-		for(int i = 0; i < totalRows; i++) {
-			System.out.print(i+1 + " "); // prints number on the left hand side of the columns
-			for(int j = 0; j < totalCols; j++) {
-				// print # instead of the letters for occupied seats
-				if(audit[i][j].equals("A") || audit[i][j].equals("S") || audit[i][j].equals("C")) { 
-					System.out.print("#");
-				}
-				else {
-					System.out.print(".");
-				}
-			}
-			printLine("");
-		}	
-	} 	
 	
-	//allows user to reserve seats (child, senior, adult) checks if they are available
-	public static void reserveSeats(int row, String seat, int adultQuantity, int seniorQuantity, int childQuantity) {
-		int seatNum = (int)(seat.charAt(0)) - ASCII_CHAR_START; // set string to char and then cast to int. Subtract to zero it
-		
-		// goes through each ticket type and reserves in order of adults, children, and seniors
-		for(int i = 0; i < adultQuantity; i++) {
-			auditorium[row-1][seatNum] = "A";
-			seatNum++;
-		}
-		for(int j = 0; j < childQuantity; j++) {
-			auditorium[row-1][seatNum] = "C";
-			seatNum++;
-		}
-		for(int k = 0; k < seniorQuantity; k++) {
-			auditorium[row-1][seatNum] = "S";
-			seatNum++;
-		}
-	}
-	
-	// helper function to reserve seats, checks if seat is available
-	public static boolean checkAvailable(String[][] audit, int row, String seat, int totalQuantity) {
-		int seatNum = (int) (seat.charAt(0)) - ASCII_CHAR_START;
-	
-		for(int i = 0; i < totalQuantity; i++) { // loop through the same amount seats the user reserved
-			if(!audit[row-1][seatNum].contains(".")) { // if the seat is occupied return false
-				return false;
-			}
-			seatNum++; // increment the seat number otherwise to check the next seat
-		}
-		return true;
-	}
-	
-	// method outputs 2d array to output file A1.txt
-	public static void outputArrayFile(PrintWriter output) throws IOException {
-		for(int i = 0; i < totalRows; i++) {
-			for(int j = 0; j < totalCols; j++) {
-				output.print(auditorium[i][j]); // print it to A1.txt
-			}
-			output.println("");
-		}
-	}
 	
 	// displays final report of tickets, types, and seats sold to user
-	public static void displayReport() {
+	public static void displayReport(Auditorium audit) {
 		int totalSold = 0, adultSold = 0, childSold = 0, seniorSold = 0;
 		double totalSales = 0;
 		// Counts num sold by going through each seat and incrementing based on type found
-		for(int i = 0; i < totalRows; i++) {
-			for(int j = 0; j < totalCols; j++) { 
-				switch(auditorium[i][j]) {
-					case "A":
+		for(int i = 1; i < audit.getNumRows() + 1; i++) {
+			for(int j = 1; j < audit.getNumCols() + 1; j++) { 
+				switch(audit.findSeat(i,j).getPayload().getTicketType()) { // get the ticket type from the current position in the linkedlist
+					case 'A':
 						adultSold++;
 						break;
-					case "C":
+					case 'C':
 						childSold++;
 						break;
-					case "S":
+					case 'S':
 						seniorSold++;
 						break;
 				}
@@ -224,7 +163,7 @@ public class Main {
 		//Calculates and displays the num sold and sub types.
 		totalSales = (adultSold * ADULT_TICKET_COST) + (childSold * CHILD_TICKET_COST) + (seniorSold * SENIOR_TICKET_COST);
 		totalSold =  (seniorSold + childSold + adultSold);
-		System.out.println("Total Seats:	" + (totalCols * totalRows) + "\n" +
+		System.out.println("Total Seats:	" + (audit.getNumCols() * audit.getNumRows()) + "\n" +
 						   "Total Tickets:	" + totalSold + "\n" +
 						   "Adult Tickets:	" + adultSold + "\n" +
 						   "Child Tickets:	" + childSold + "\n" +
@@ -232,35 +171,9 @@ public class Main {
 						   "Total Sales:	$" + df.format(totalSales)); // rounded to 2 decimal places
 	}
 	
-	// method opens file and reads it into 2d array, checks if it exists
-	public static void openAuditFile (String filename) throws FileNotFoundException {
-		try {
-			File auditFile = new File(filename);
-			Scanner fileOpen = new Scanner(auditFile);
-			
-			if(auditFile.canRead()) { // check if file is found
-				// I want to read in a 2d array into auditorium.
-				while(fileOpen.hasNext()) {
-					String currRow = fileOpen.nextLine(); // creates a string of just one line
-					for(int i = 0; i < currRow.length(); i++) {
-						if(totalCols == 0) { // finds the amount of columns in each row
-							totalCols = currRow.length();
-						}
-						String index = Character.toString(currRow.charAt(i)); // parses through the line and assigns it to auditorium
-						auditorium[totalRows][i] = index;
-					}
-					totalRows++; // increment to move on to the next row and count # rows
-				}
-					fileOpen.close();
-			}
-		}
-		catch (Exception e) { // checks if file exists
-			printLine("Error: file not found");
-		}
-	}
 	
 	// main logic for asking user to reserve tickets and best available seats
-	public static void userInterfaceLoop(Scanner input, PrintWriter output) throws IOException {
+	public static void userInterfaceLoop(Scanner input, Auditorium audit) throws IOException {
 		boolean EXIT = false; // used to exit the do loop when user is prompted to exit
 		
 		do {
@@ -273,12 +186,12 @@ public class Main {
 			String menuSelect = input.next();
 			switch (menuSelect) {
 				case "1": // when user chooses to reserve seats
-					displayAuditorium(auditorium); 
+					audit.displayAuditorium();
 					// input validation and prompts to gather information on what seats user wants
 					printLine("Please enter a row number from above: ");
 					rowNum = input.nextInt();
-					while(rowNum <= 0 || rowNum > totalRows) {
-						displayAuditorium(auditorium);
+					while(rowNum <= 0 || rowNum > audit.getNumRows()) {
+						audit.displayAuditorium();
 						printLine("Please try again and enter a valid row number: ");
 						rowNum = input.nextInt();
 					}
@@ -310,14 +223,17 @@ public class Main {
 						printLine("Invalid number of tickets, please enter a number between 0 and " + totalCols);
 						seniorNum = input.nextInt();
 					}
-					
+					int seat = ((int) (seatLetter.charAt(0)))-ASCII_CHAR_START+1; // changes string to char then to integer
+					printLine(Integer.toString(seat));
 					// After gathering user info, we check if they're valid inputs, if they are reserve their seats
-					boolean isAvailable = checkAvailable(auditorium, rowNum, seatLetter, (adultNum + childNum + seniorNum));
+					boolean isAvailable = audit.checkAvailable(rowNum, seat, (adultNum + childNum + seniorNum));
 					if(isAvailable) {
-						reserveSeats(rowNum, seatLetter, adultNum, seniorNum, childNum);
+						char seatChar = seatLetter.charAt(0);
+						audit.reserveSeats(rowNum, seatChar, adultNum, seniorNum, childNum);
 					}
 					else { // otherwise find the best available seats and display them to the user
 						System.out.println("There are seats not available from your selection.");
+						/*
 						// starting seat number of the best available seats to the middle
 						int seatNum = (bestAvailable(auditorium, totalCols, (adultNum + childNum + seniorNum), rowNum - 1)
 								+ ASCII_CHAR_START);
@@ -333,7 +249,7 @@ public class Main {
 							switch(yesNo) {
 								case "Y":
 									// best available seats are reserved
-									reserveSeats(rowNum, seatLetter, adultNum, seniorNum, childNum);
+									audit.reserveSeats(rowNum, seatLetter, adultNum, seniorNum, childNum);
 									break;
 								case "N":
 									printLine("Refusing best available seats..."); // exit from switch case and returns to the start
@@ -343,6 +259,7 @@ public class Main {
 									continue;
 							}
 						}
+						*/
 					}
 					break;
 				case "2": // when user is prompted to exit
@@ -363,19 +280,16 @@ public class Main {
 		// asks for filename
 		Scanner input = new Scanner(System.in);
 		String filename = input.nextLine();
-		// for output file
-		PrintWriter output = new PrintWriter(new File("A1.txt"));
 		
-		// opens file and reads it into array
-		openAuditFile(filename);
+		// opens file and reads it into a 2d linked list 
+		Auditorium audit = new Auditorium(filename);
 		// main logic for asking user to reserve tickets and showing them best available seats
-		userInterfaceLoop(input, output);
+		userInterfaceLoop(input, audit);
 		input.close();
 		//output to 2d array contents to file
-		outputArrayFile(output);
-		output.close();
+		audit.outputListFile();
 		// display sales report
-		displayReport();
+		displayReport(audit);
 	}
 
 }
