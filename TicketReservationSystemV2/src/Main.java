@@ -16,13 +16,6 @@ public class Main {
 	public static final double SENIOR_TICKET_COST = 7.5;
 	// FOR AUDITORIUM HEADER START OF ASCII CHARACTER ALPHABET
 	public static final int ASCII_CHAR_START = 65;  
-	/// ROWS AND COLS WILL NEVER EXCEED THESE
-	public static final int MAX_ROWS = 10;
-	public static final int MAX_COLUMNS = 26;
-	
-	// used for calculations for each auditorium
-	static int totalCols = 0;
-	static int totalRows = 0;
 	
 	// used to round decimals to hundredth place
 	private static DecimalFormat df = new DecimalFormat("0.00");
@@ -31,115 +24,6 @@ public class Main {
 	public static void printLine(String str) {
 		System.out.println(str);
 	}
-	
-	// calculated distance between middle and optimal seating
-	public static int calculateDistance(int seatsRow, int totalQuantity, int outerLoopCount) {
-		int distance = (outerLoopCount + (totalQuantity) / 2) - ((seatsRow+1) / 2);
-		return distance;
-	}
-	
-	// checks for the best available seats to reserve
-	public static int bestAvailable(String[][] audit, int seatsRow, int totalQuantity, int rowNum) {
-		int startSeatNum = -1; // default value that is needed returned when no best available seats are found
-		double smallDist = Integer.MAX_VALUE, currDist = Integer.MAX_VALUE; // used to swap between each other when a smaller dist is found
-		
-		for(int i = 0; i < seatsRow-totalQuantity+1; i++) { // stops right when continuing would go out of bounds
-			boolean empty = true;
-			for(int j = 0; j < totalQuantity; j++) { // loop only the total quanitity number of times 
-				if(!audit[rowNum][j+i].contains(".")) { // breaks from loop if current seat is occupied
-					empty = false;
-					break;
-				}
-			}
-			// after exiting loop if all the seats were empty calculate the distance
-			if(empty) {
-				currDist = Math.abs(calculateDistance(seatsRow, totalQuantity, i));
-			}
-			// if the distance calculated is less than the current smallest distance replace it
-			if(currDist < smallDist) {
-				startSeatNum = i;  // set the seat number to the current index
-				smallDist = Math.min(currDist, smallDist);
-			}
-		}
-		return startSeatNum;
-	}
-	// helper method: generates the header for the display auditorium and the valid seats available
-	public static void rowLetterGenerator() {
-		System.out.print("  ");
-		for(int i = 0; i < totalCols; i++) {
-			char letter = (char)(i+ASCII_CHAR_START); // cast int to ascii char
-			System.out.print(letter); 
-		}
-		printLine("");
-	}
-	/*
-	//Finds the bestAvailable seats
-	public static Seat bestAvailableTest(Auditorium auditorium, int seatsInRow, int totalQuantity, int rowNum)
-	{
-	    //Create marker variables
-	    int bestRow=-1;
-	    int bestCol=-1;
-	    double bestDistance = Integer.MAX_VALUE;
-	    double tempDistance = 0.0;
-	    double mid=((double)(totalQuantity-1)/2.0);
-	    
-	    
-	    double midRow=((double)(rowNum+1)/2.0);
-	    double midCol=((double)(seatsInRow+1)/2.0);
-	    //Goes through the rows
-	    for(int r = 1; r <= rowNum; r++)
-	    {
-	        //Goes through the cols
-	        for(int c = 1; c <= seatsInRow; c++)
-	        {
-	            //First checks if the seat is availible
-	            if(checkAvailable(r, c, totalQuantity))
-	            { 
-	                //Calculates the distance
-	                tempDistance = Math.sqrt(Math.pow(r - midRow, 2) + Math.pow(c + mid - midCol, 2));
-	                // calculates distances from middle
-	                double currRowDistance = Math.abs(r - Math.ceil((double)(rowNum)/2.0));
-	                double bestRowDistance	= Math.abs(bestRow - Math.ceil((double)(rowNum)/2.0));	
-	                //Checks if the distance is smaller
-	                if(bestDistance>tempDistance)
-	                {
-	                    bestDistance=tempDistance;
-	                    bestRow=r;
-	                    bestCol=c;
-	                }
-	                //Checks of the distance is equal
-	                else if(bestDistance==tempDistance)
-	                {
-	                    //Checks which row is closer to the middle
-	                    if(currRowDistance < bestRowDistance)
-	                    {
-	                        bestDistance=tempDistance;
-	                        bestRow=r;
-	                        bestCol=c;
-	                    }
-	                    //Checks if the distance to the middle row is equal
-	                    else if(currRowDistance == bestRowDistance)
-	                    {
-	                        //Chooses the lower row
-	                        if(r < bestRow)
-	                        {
-	                            bestDistance = tempDistance;
-	                            bestRow = r;
-	                            bestCol = c;
-	                        }
-	                    }
-	                }
-	                
-	            }
-	        }
-	    }
-	    if(bestCol == -1 && bestRow == -1)
-	        return null;
-	    return findSeat(bestRow,bestCol);
-	}
-	*/
-	
-	
 	// displays final report of tickets, types, and seats sold to user
 	public static void displayReport(Auditorium audit) {
 		int totalSold = 0, adultSold = 0, childSold = 0, seniorSold = 0;
@@ -170,7 +54,84 @@ public class Main {
 						   "Senior Tickets:	" + seniorSold + "\n" +
 						   "Total Sales:	$" + df.format(totalSales)); // rounded to 2 decimal places
 	}
-	
+	/*
+	 * Input Validation Functions
+	 */
+	// obtain the correct row from user
+	public static int getRow(Scanner input, Auditorium audit) {
+		int rowChoice = -1;
+			try {
+				audit.displayAuditorium();
+				printLine("Please enter a row number from above: ");
+				rowChoice = input.nextInt();
+				if(rowChoice > audit.getNumRows() || rowChoice <= 0) {
+					printLine("Invalid row number. Try again with a proper input ");
+					rowChoice = getRow(input, audit);
+				}
+			}
+			catch (InputMismatchException e) {
+				printLine("Invalid row number. Try again with a proper input ");
+				input.next();
+				rowChoice = getRow(input, audit);
+			}
+		return rowChoice;
+	}
+	// Get the correct seat char
+	public static String getSeat(Scanner input, Auditorium audit) {
+		String seatChoice = "";
+		String maxCharacter = Character.toString((char) audit.getNumCols() + ASCII_CHAR_START - 1); // maximum number of characters allowed 
+			try {
+				printLine("Enter a valid seat letter: ");
+				seatChoice = input.next();
+				if(seatChoice.length() > 1 || seatChoice.compareTo(maxCharacter) > 0) {
+					printLine("Invalid seat letter. Try again with a proper input");
+					getSeat(input, audit);
+				}
+			}
+			catch (InputMismatchException e) {
+				printLine("Invalid seat letter. Try again with a proper input");
+				input.next();
+				getSeat(input, audit);
+			}
+		return seatChoice.toUpperCase();
+	}
+	// Get valid number of tickets for each type, adult, child, senior
+	public static int getTicketNum(Scanner input, String ticketType, Auditorium audit) {
+		int ticketNum = -1;
+			try {
+				printLine("How many " + ticketType + " tickets?: ");
+				ticketNum = input.nextInt();
+				if(ticketNum < 0) {
+					System.out.println("Invalid number of tickets, please enter a number between 0 and " + audit.getNumCols());
+					ticketNum = getTicketNum(input, ticketType, audit);
+				}
+			}
+			catch (InputMismatchException e) {
+				System.out.println("Invalid type for ticket, please enter a integer between 0 and " + audit.getNumCols());
+				input.next();
+				ticketNum = getTicketNum(input, ticketType, audit);
+			}
+		return ticketNum;
+	}
+	// gets user input for the menu
+	public static int getMenuNum(Scanner input) {
+		int menuNum = -1;
+			try {
+				printLine("1. Reserve Seats");
+				printLine("2. Exit");
+				menuNum = input.nextInt();
+				if(menuNum < 0 || menuNum > 2) {
+					printLine("Please enter either 1 to reserve tickets or 2 exit the program.");
+					menuNum = getMenuNum(input);
+				}
+			}
+			catch (InputMismatchException e) {
+				printLine("Please enter either 1 to reserve tickets or 2 exit the program.");
+				input.next();
+				menuNum = getMenuNum(input);
+			}
+		return menuNum;
+	}
 	
 	// main logic for asking user to reserve tickets and best available seats
 	public static void userInterfaceLoop(Scanner input, Auditorium audit) throws IOException {
@@ -179,77 +140,46 @@ public class Main {
 		do {
 			int rowNum = 0, adultNum = 0, childNum = 0, seniorNum = 0; // stores the row number and the num of tickets for each type
 			String seatLetter = ""; // used to reserve seats and check if it's available
-		
-			printLine("1. Reserve Seats");
-			printLine("2. Exit");
 			// scanner for user selection in menu
-			String menuSelect = input.next();
+			int menuSelect = getMenuNum(input);
 			switch (menuSelect) {
-				case "1": // when user chooses to reserve seats
-					audit.displayAuditorium();
+				case 1: // when user chooses to reserve seats
 					// input validation and prompts to gather information on what seats user wants
-					printLine("Please enter a row number from above: ");
-					rowNum = input.nextInt();
-					while(rowNum <= 0 || rowNum > audit.getNumRows()) {
-						audit.displayAuditorium();
-						printLine("Please try again and enter a valid row number: ");
-						rowNum = input.nextInt();
-					}
+					rowNum = getRow(input, audit);
 					// only allows capital letters and the ABCs as viable strings to enter
-					printLine("Enter a valid seat letter: ");
-					while(!input.hasNext("[ABCDEFGHIJKLMNOPQRSTUVWXYZ]")) {
-						printLine("Invalid letter, please choose a valid seat letter");
-						seatLetter = input.next().toUpperCase();
-					}
-					seatLetter = input.next().toUpperCase();
+					seatLetter = getSeat(input, audit);
 					// gathers ticket amount along with input validation for all sub types
-					printLine("How many adult tickets?: ");
-					adultNum = input.nextInt();
-					while(adultNum < 0) {
-						printLine("Invalid number of tickets, please enter a number between 0 and " + totalCols);
-						adultNum = input.nextInt();
-					}
+					adultNum = getTicketNum(input, "adult", audit);
+					childNum = getTicketNum(input, "child", audit);
+					seniorNum = getTicketNum(input, "senior", audit);
 					
-					System.out.println("How many child tickets?: ");
-					childNum = input.nextInt();
-					while(childNum < 0) {
-						printLine("Invalid number of tickets, please enter a number between 0 and " + totalCols);
-						childNum = input.nextInt();
-					}
-					
-					printLine("How many senior tickets?: ");
-					seniorNum = input.nextInt(); 	
-					while(seniorNum < 0) {
-						printLine("Invalid number of tickets, please enter a number between 0 and " + totalCols);
-						seniorNum = input.nextInt();
-					}
 					int seat = ((int) (seatLetter.charAt(0)))-ASCII_CHAR_START+1; // changes string to char then to integer
 					printLine(Integer.toString(seat));
 					// After gathering user info, we check if they're valid inputs, if they are reserve their seats
 					boolean isAvailable = audit.checkAvailable(rowNum, seat, (adultNum + childNum + seniorNum));
-					if(isAvailable) {
-						char seatChar = seatLetter.charAt(0);
+					char seatChar = seatLetter.charAt(0);
+					if(isAvailable) { // when available reserve seats
 						audit.reserveSeats(rowNum, seatChar, adultNum, seniorNum, childNum);
 					}
 					else { // otherwise find the best available seats and display them to the user
 						System.out.println("There are seats not available from your selection.");
-						/*
-						// starting seat number of the best available seats to the middle
-						int seatNum = (bestAvailable(auditorium, totalCols, (adultNum + childNum + seniorNum), rowNum - 1)
-								+ ASCII_CHAR_START);
-						//starting and final seat letter is cast into char then string 
-						seatLetter = Character.toString((char)(seatNum));
-						String finalSeatLetter = Character.toString((char)(seatNum + adultNum + childNum + seniorNum - 1));  
+						// starting seat of the best available seats to the middle of the auditorium
+						Node<Seat> startSeat = audit.bestAvailable(audit.getNumCols(), (adultNum + childNum + seniorNum), audit.getNumRows());
+						// gets the starting set and the best row from the best available method
+						seatChar = startSeat.getPayload().getSeat();
+						int bestRow = startSeat.getPayload().getRow();
+						// add starting seat char with the number of 
+					    char finalSeatChar = (char) (seatChar + adultNum + childNum + seniorNum - 1);  
 						// checks if the best available method worked
-						if(seatNum != (-1 + ASCII_CHAR_START)) {
+						if(startSeat != null) {
 							printLine("Do you want to reserve the best available seats instead? Type Y or N");
-							printLine(rowNum + seatLetter + " - " + rowNum +  finalSeatLetter); // prints the starting and final seats
+							System.out.println(bestRow + Character.toString(seatChar) + " - " + bestRow + finalSeatChar); // prints the starting and final seats
 							// prompt if user wishes to reserve the best available seats
 							String yesNo = input.next();
 							switch(yesNo) {
 								case "Y":
 									// best available seats are reserved
-									audit.reserveSeats(rowNum, seatLetter, adultNum, seniorNum, childNum);
+									audit.reserveSeats(bestRow, seatChar, adultNum, seniorNum, childNum);
 									break;
 								case "N":
 									printLine("Refusing best available seats..."); // exit from switch case and returns to the start
@@ -259,17 +189,12 @@ public class Main {
 									continue;
 							}
 						}
-						*/
 					}
 					break;
-				case "2": // when user is prompted to exit
+				case 2: // when user is prompted to exit
 					printLine("Exiting ticket reservation system...");
 					EXIT = true;
 					break;
-				default: // when user makes an error with choice
-					printLine("Please enter either 1 to reserve tickets or 2 exit the program.");
-					continue;
-				
 			}
 		} 	while (EXIT != true);
 		
