@@ -4,7 +4,7 @@
  * ID: MSV180000
  * Purpose: Ticket reservation system for a movie theater. Uses file i/o to make
  * reservations and outputs results to output file.
- */
+ */	
 public class Seat {
 	private int row;
 	private char seat;

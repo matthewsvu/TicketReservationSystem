@@ -57,7 +57,7 @@ public class Auditorium {
 					// reset the ptrs and variables
 					tempLeft = null; 
 					seat = 'A';
-					row++;
+					row++; // move down 1 row
 					// create the rest of the rows for the linked list and connecting thm to the one above
 					for(int i = 0; i < colLen; i++) {
 						current = new Node<Seat>(new Seat(row, seat, line.charAt(i))); // create a current node
@@ -69,7 +69,7 @@ public class Auditorium {
 						}
 						tempLeft = current; // prev left ptr points to current 
 						tempUp = tempUp.getRight(); // point the upper node to the right of it
-						seat++; 
+						seat++; // move to next column
 					}
 					firstSeat = firstSeat.getDown(); // move the head ptr down one node
 					tempUp = firstSeat; 
@@ -103,7 +103,7 @@ public class Auditorium {
 		this.numCols = numCols;
 	}
 	// helper method: generates the header for the display auditorium and the valid seats available
-	public void rowLetterGenerator() {
+	private void rowLetterGenerator() {
 			System.out.print("  ");
 			for(int i = 0; i < numCols; i++) {
 				char letter = (char)(i+65); // cast int to ascii char
@@ -113,7 +113,7 @@ public class Auditorium {
 		}
 	
 	//Finds the seat the seat given the row and char
-	Node<Seat> findSeat(int row, char seat)
+	protected Node<Seat> findSeat(int row, char seat)
 		{
 		    Node<Seat> seatNeeded = getFirst();
 		    
@@ -122,13 +122,13 @@ public class Auditorium {
 		        seatNeeded = seatNeeded.getDown();
 		    }
 		    //Goes through each seat to get to the wanted row
-		    for(int j = 1; j < seat-'A'+1; j++) {
+		    for(int j = 1; j < seat - 'A' + 1; j++) {
 		        seatNeeded = seatNeeded.getRight();
 		    }
 		    return seatNeeded;
 		}
 	//Finds the seat the seat given the row and seat
-	Node<Seat> findSeat(int row, int seat)
+	protected Node<Seat> findSeat(int row, int seat)
 	{
 	    Node<Seat> seatNeeded = getFirst();
 	    
@@ -151,7 +151,7 @@ public class Auditorium {
 		
 		rowLetterGenerator();
 		while(current != null) {
-			System.out.print(count+1 + " "); // prints number on the left hand side of the columns
+			System.out.print(count + 1 + " "); // prints number on the left hand side of the columns
 			while(current != null) { // until reach end of rull
 				if(current.getPayload().getTicketType() != '.') { // print # instead of the letters for occupied seats
 					System.out.print("#");
@@ -201,6 +201,72 @@ public class Auditorium {
 			reservedSeat = reservedSeat.getRight();
 		}
 	}
+	// Find the Best Available seats
+		public Node<Seat> bestAvailable(int seatsInRow, int totalQuantity, int rowNum)
+		{
+		    // best row and col will be returned in a seat object
+		    int bestRow = -1;
+		    int bestCol = -1;
+		    // best distance and temp distance 
+		    double bestDistance = Integer.MAX_VALUE;
+		    double tempDistance = Integer.MIN_VALUE;
+		    // the middle of the number of seats being bought
+		    double mid = (totalQuantity - 1) / 2.0;
+		    // middle of the auditorium
+		    double midRow = (rowNum + 1) / 2.0;
+		    double midCol = (seatsInRow + 1) / 2.0;
+		    //Goes through the rows
+		    for(int currRow = 1; currRow <= rowNum; currRow++)
+		    {
+		        //Goes through the cols
+		        for(int currCol = 1; currCol <= seatsInRow; currCol++)
+		        {
+		            //First checks if the seat is available
+		            if(checkAvailable(currRow, currCol, totalQuantity))
+		            { 
+		                //Calculates the distance
+		                tempDistance = Math.sqrt(Math.pow(currRow - midRow, 2) + Math.pow(currCol + mid - midCol, 2));
+		                // calculates distances from middle
+		                double currRowDistance = Math.abs(currRow - Math.ceil((double) (rowNum) / 2.0));
+		                double bestRowDistance	= Math.abs(bestRow - Math.ceil((double) (rowNum) / 2.0));	
+		                //Checks if the distance is smaller
+		                if(bestDistance > tempDistance)
+		                {
+		                    bestDistance = tempDistance;
+		                    bestRow = currRow;
+		                    bestCol = currCol;
+		                }
+		                //Checks if the distance is equal
+		                else if(bestDistance == tempDistance)
+		                {
+		                    //Checks if current row is closer than the best row to the middle
+		                    if(currRowDistance < bestRowDistance)
+		                    {
+		                        bestDistance = tempDistance;
+		                        bestRow = currRow;
+		                        bestCol = currCol;
+		                    }
+		                    //Checks if the distance to the middle row is equal
+		                    else if(currRowDistance == bestRowDistance)
+		                    {
+		                        //Chooses the lower row
+		                        if(currRow < bestRow)
+		                        {
+		                            bestDistance = tempDistance;
+		                            bestRow = currRow;
+		                            bestCol = currCol;
+		                        }
+		                    }
+		                }
+		                
+		            }
+		        }
+		    }
+		    if(bestCol == -1 && bestRow == -1) { // return null when nothing happens
+		        return null;
+		    }
+		    return findSeat(bestRow, bestCol); // returns a seat that has best rows and cols
+		}
 		// method outputs 2d linkedList to output file A1.txt
 	public void outputListFile() throws IOException {
 		// for output file
